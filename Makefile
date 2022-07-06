@@ -29,7 +29,7 @@ build-impl-%: build_%/Makefile
 test-impl-%: build-impl-%
 	@cmake --build build_$* -j $(NPROCS) --target service_template_unittest
 	@cmake --build build_$* -j $(NPROCS) --target service_template_benchmark
-	@cd build_$* && GTEST_COLOR=1 ctest -V
+	@cd build_$* && ((test -t 1 && GTEST_COLOR=1 PYTEST_ADDOPTS="--color=yes" ctest -V) || ctest -V)
 	@pep8 tests
 
 # clean
