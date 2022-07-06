@@ -3,3 +3,13 @@ async def test_basic(service_client):
     response = await service_client.post('/hello', params={'name': 'Tester'})
     assert response.status == 200
     assert response.text == 'Hello, Tester!\n'
+
+
+async def test_memory(service_client):
+    response = await service_client.post('/hello', params={'name': 'World'})
+    assert response.status == 200
+    assert response.text == 'Hello, World!\n'
+
+    response = await service_client.post('/hello', params={'name': 'World'})
+    assert response.status == 200
+    assert response.text == 'Hi again, World!\n'

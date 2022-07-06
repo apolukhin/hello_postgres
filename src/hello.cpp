@@ -6,6 +6,7 @@
 #include <userver/server/handlers/http_handler_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
+#include <userver/utils/assert.hpp>
 
 namespace service_template {
 
@@ -28,16 +29,22 @@ class Hello final : public userver::server::handlers::HttpHandlerBase {
       userver::server::request::RequestContext&) const override {
     const auto& name = request.GetArg("name");
 
+    auto user_type = UserType::kFirstTime;
     if (!name.empty()) {
-      pg_cluster_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                          "INSERT INTO hello_postgres.users(name, count) VALUES($1) "
-                          "ON CONFLICT (name) "
-                          "DO UPDATE SET count = users.count + 1 "
-                          "RETURNING users.count",
-                          name);
+      auto result = pg_cluster_->Execute(
+          userver::storages::postgres::ClusterHostType::kMaster,
+          "INSERT INTO hello_schema.users(name, count) VALUES($1, 1) "
+          "ON CONFLICT (name) "
+          "DO UPDATE SET count = users.count + 1 "
+          "RETURNING users.count",
+          name);
+
+      if (result.AsSingleRow<int>() > 1) {
+        user_type = UserType::kKnown;
+      }
     }
 
-    return service_template::SayHelloTo(name);
+    return service_template::SayHelloTo(name, user_type);
   }
 
   userver::storages::postgres::ClusterPtr pg_cluster_;
@@ -45,12 +52,19 @@ class Hello final : public userver::server::handlers::HttpHandlerBase {
 
 }  // namespace
 
-std::string SayHelloTo(std::string_view name) {
+std::string SayHelloTo(std::string_view name, UserType type) {
   if (name.empty()) {
     name = "unknown user";
   }
 
-  return fmt::format("Hello, {}!\n", name);
+  switch (type) {
+    case UserType::kFirstTime:
+      return fmt::format("Hello, {}!\n", name);
+    case UserType::kKnown:
+      return fmt::format("Hi again, {}!\n", name);
+  }
+
+  UASSERT(false);
 }
 
 void AppendHello(userver::components::ComponentList& component_list) {

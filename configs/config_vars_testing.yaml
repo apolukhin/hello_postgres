@@ -6,4 +6,5 @@ is_testing: true
 
 server-port: 8080
 
-dbconnection: 'postgresql://testsuite@localhost:15433/uservice_dynconf_uservice_dynconf'
+# hello_postgres_db is the service name + _ + filename of the db.sql
+dbconnection: 'postgresql://testsuite@localhost:15433/hello_postgres_db'
