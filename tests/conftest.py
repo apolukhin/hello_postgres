@@ -18,10 +18,18 @@ def root_dir():
 
 
 @pytest.fixture(scope='session')
+def initial_data_path(root_dir):
+    """Path for find files with data"""
+    return [
+        root_dir / 'postgresql/data',
+    ]
+
+
+@pytest.fixture(scope='session')
 def pgsql_local(root_dir, pgsql_local_create):
     """Create schemas databases for tests"""
     databases = discover.find_schemas(
-        'hello_postgres',
+        'service_template',  # service name that goes to the DB connection
         [root_dir.joinpath('postgresql/schemas')],
     )
     return pgsql_local_create(list(databases.values()))
